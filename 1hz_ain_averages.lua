@@ -10,38 +10,41 @@
           To customize, change lines: 19, 23, and 26.
 --]]
 
+--The following can be updated:
+  -- The analog inputs/registers to read & average
+  local channels = {0, 1, 2, 3}
+  -- Number of scans to cache & average
+  local numscans = 10
+  -- Sampling interval, 1 per second
+  local intrvlhz = 1
+  --The resolultion index of the ain channels
+  local resindx = 12
+
+
 --Local functions for faster processing
 local ljWrite = MB.W
 local ljRead = MB.R
 local ljnameToAddress = MB.nameToAddress
 
--- Sampling interval, 1 per second
-local intrvlhz = 1
-local intrvlms = math.floor(1/intrvlhz * 1000)
 
--- Number of scans to cache & average
-local numscans = 10
-
--- The analog inputs/registers to read & average
-local channels = {ljnameToAddress("AIN0"),ljnameToAddress("AIN1"), ljnameToAddress("AIN2"), ljnameToAddress("AIN3")}
-local numchannels = table.getn(channels)
-
---Initialize arrays
+--Initialize variables
 local ainavg = {}
 local sums = {}
+local index = 1
 local ain = {}
+local count = 0
+local intrvlms = math.floor(1/intrvlhz * 1000)
+local numchannels = table.getn(channels)
 
 --Build arrays and set ram registers.
-for i=1,numchannels-1 do
+for i=1,numchannels do
   ainavg[i] = -9999.0
-  ljWrite((46000 + (channels[i])), 3, ainavg[i])
+  ljWrite((46000 + ((i-1)*2)), 3, ainavg[i])
   ain[i] = {}
 end
 
---Set resindex to 12 for AIN0-AIN3
-for i=0,3 do
-  ljWrite(((ljnameToAddress"AIN0_RESOLUTION_INDEX")+(i)), 0, 12) 
-end
+--Set resindex to 12
+ljWrite(ljnameToAddress("AIN_ALL_RESOLUTION_INDEX"), 0, resindx) 
 
 -- Configure an interval
 LJ.IntervalConfig(0, intrvlms)
@@ -50,27 +53,31 @@ LJ.IntervalConfig(0, intrvlms)
 while true do
   -- Execute loop every intrvlms.
   if LJ.CheckInterval(0) then
-    -- Read the AIN channels
-    for i=1,numchannels-1 do
-      table.insert(ain[i], ljRead(ljnameToAddress("AIN"..(i-1)), 3))
-    end
     
-    -- Execute if numscans or more scans have been made
-    if table.getn(ain[1])==numscans then
-      --Find the average of each channel's readings
-      for i=1,numchannels-1 do
+    -- Iterates through each channel
+    for i=1,numchannels do
+      -- Read the AIN channels
+      ain[i][index]= ljRead(ljnameToAddress("AIN"..(i-1)), 3)
+      -- Execute if numscans or more scans have been made
+      if index==numscans then
         sums[i] = 0
+        --Find the average of each channel's readings
         for j=1,numscans do
+          print(ain[i][j])
           sums[i] = sums[i] + ain[i][j]
         end
         ainavg[i] = sums[i] / numscans
         -- Save result to USER_RAM#_F32 register
-        ljWrite((46000 + (channels[i])), 3, ainavg[i])
-      end
-      --Prepare the array for new reading by shifting the array over and adjusting index.
-      for i=1, numchannels-1 do
+        print(ainavg[i])
+        ljWrite((46000 + ((i-1)*2)), 3, ainavg[i])
+        --Prepare the array for new reading by shifting the array over and adjusting index.
         table.remove(ain[i], 1)
+        index = index - 1
       end
     end
+    --Save number of scans to user ram
+    ljWrite((46000 + ((numchannels)*2)), 3, count)
+    count = count + 1 
+    index = index +1
   end
 end 
