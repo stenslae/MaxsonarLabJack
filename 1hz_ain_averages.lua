@@ -6,6 +6,8 @@
 
           Testing was performed with a T7, FW 1.0299,
           and Kipling 3.1.17 open to the Lua Script Debugger tab
+          
+          To customize, change lines: 19, 23, and 26.
 --]]
 
 --Local functions for faster processing
@@ -17,26 +19,23 @@ local ljnameToAddress = MB.nameToAddress
 local intrvlhz = 1
 local intrvlms = math.floor(1/intrvlhz * 1000)
 
--- Number of samples to cache & average
-local numsamp = 10
+-- Number of scans to cache & average
+local numscans = 10
 
 -- The analog inputs/registers to read & average
 local channels = {ljnameToAddress("AIN0"),ljnameToAddress("AIN1"), ljnameToAddress("AIN2"), ljnameToAddress("AIN3")}
 local numchannels = table.getn(channels)
 
---Initialize sum calculation variables
-local index = 1
+--Initialize arrays
 local ainavg = {}
 local sums = {}
-
---Build array for AIN measurements
 local ain = {}
+
+--Build arrays and set ram registers.
 for i=1,numchannels-1 do
-  ainavg[i] = 0
+  ainavg[i] = -9999.0
+  ljWrite((46000 + (channels[i])), 3, ainavg[i])
   ain[i] = {}
-  for j=1,numsamp do
-    ain[i][j]= 0
-  end
 end
 
 --Set resindex to 12 for AIN0-AIN3
@@ -49,32 +48,29 @@ LJ.IntervalConfig(0, intrvlms)
 
 -- Begin loop
 while true do
-  -- A reading is taken every 10 seconds
+  -- Execute loop every intrvlms.
   if LJ.CheckInterval(0) then
     -- Read the AIN channels
     for i=1,numchannels-1 do
-      ain[i][index] = ljRead(ljnameToAddress("AIN"..(i-1)), 3)
+      table.insert(ain[i], ljRead(ljnameToAddress("AIN"..(i-1)), 3))
     end
     
-    --If 10 readings have been made for each channel
-    if index==10 then
+    -- Execute if numscans or more scans have been made
+    if table.getn(ain[1])==numscans then
       --Find the average of each channel's readings
       for i=1,numchannels-1 do
         sums[i] = 0
-        for j=1,numsamp do
+        for j=1,numscans do
           sums[i] = sums[i] + ain[i][j]
         end
-        ainavg[i] = sums[i] / numsamp
+        ainavg[i] = sums[i] / numscans
         -- Save result to USER_RAM#_F32 register
         ljWrite((46000 + (channels[i])), 3, ainavg[i])
       end
       --Prepare the array for new reading by shifting the array over and adjusting index.
       for i=1, numchannels-1 do
         table.remove(ain[i], 1)
-        table.insert(ain[i], numsamp, 0)
       end
-      index = index - 1
     end
-    index = index + 1
   end
-end 
+end
