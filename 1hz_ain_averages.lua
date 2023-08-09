@@ -53,27 +53,29 @@ LJ.IntervalConfig(0, intrvlms)
 while true do
   -- Execute loop every intrvlms.
   if LJ.CheckInterval(0) then
-    
-    -- Iterates through each channel
-    for i=1,numchannels do
       -- Read the AIN channels
+    for i=1,numchannels do 
       ain[i][index]= ljRead(ljnameToAddress("AIN"..(i-1)), 3)
+    end
+
+    -- Iterates through each channel
+    if index==numscans then
       -- Execute if numscans or more scans have been made
-      if index==numscans then
+      for i=1,numchannels do
         sums[i] = 0
         --Find the average of each channel's readings
         for j=1,numscans do
-          print(ain[i][j])
           sums[i] = sums[i] + ain[i][j]
         end
         ainavg[i] = sums[i] / numscans
         -- Save result to USER_RAM#_F32 register
-        print(ainavg[i])
         ljWrite((46000 + ((i-1)*2)), 3, ainavg[i])
-        --Prepare the array for new reading by shifting the array over and adjusting index.
-        table.remove(ain[i], 1)
-        index = index - 1
       end
+        --Prepare the array for new reading by shifting the array over and adjusting index.
+        for i=1,numchannels do 
+          table.remove(ain[i], 1) 
+        end
+        index = index - 1
     end
     --Save number of scans to user ram
     ljWrite((46000 + ((numchannels)*2)), 3, count)
