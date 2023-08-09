@@ -6,8 +6,6 @@
 
           Testing was performed with a T7, FW 1.0299,
           and Kipling 3.1.17 open to the Lua Script Debugger tab
-          
-          To customize, change lines: 19, 23, and 26.
 --]]
 
 --The following can be updated:
