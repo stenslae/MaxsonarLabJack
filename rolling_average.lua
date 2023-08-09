@@ -1,5 +1,5 @@
 --[[
-    Name: 1hz_ain_averages.lua
+    Name: rolling_average.lua
     Desc: Implements a moving-average script. After collecting each
           new value, average AIN value is provided.
     Note: Averaged from 10 seconds of data, measures every second. Is saved to user ram.
