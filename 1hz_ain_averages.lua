@@ -58,25 +58,26 @@ while true do
       ain[i][index]= ljRead(ljnameToAddress("AIN"..(i-1)), 3)
     end
 
-    -- Iterates through each channel
-    if index==numscans then
-      -- Execute if numscans or more scans have been made
-      for i=1,numchannels do
+    --Find the average of each channel's current readings
+    for i=1,numchannels do
         sums[i] = 0
-        --Find the average of each channel's readings
-        for j=1,numscans do
+        for j=1,index do
           sums[i] = sums[i] + ain[i][j]
         end
-        ainavg[i] = sums[i] / numscans
+        ainavg[i] = sums[i] / index
         -- Save result to USER_RAM#_F32 register
         ljWrite((46000 + ((i-1)*2)), 3, ainavg[i])
-      end
+    end
+
+    -- Execute if numscans or more scans have been made
+    if index==numscans then
         --Prepare the array for new reading by shifting the array over and adjusting index.
         for i=1,numchannels do 
           table.remove(ain[i], 1) 
         end
         index = index - 1
     end
+    
     --Save number of scans to user ram
     ljWrite((46000 + ((numchannels)*2)), 3, count)
     count = count + 1 
