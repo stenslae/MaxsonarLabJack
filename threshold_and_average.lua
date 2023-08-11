@@ -59,7 +59,7 @@ if (top == 0 or top == 1) and (bottom == 0 or bottom == 1) then
     if LJ.CheckInterval(0) then
         -- Read the AIN channels
       for i=1,numchannels do 
-        ain[i][index]= ljRead(ljnameToAddress("AIN"..(i-1)), 3)
+        ain[i][index]= ljRead(ljnameToAddress("AIN"..channels[i]), 3)
       end
   
       -- Execute if numscans or more scans have been made
