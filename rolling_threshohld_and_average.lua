@@ -67,32 +67,26 @@ while true do
       cut[i] = ain[i]
       table.sort(cut[i])
       local count = 0
-      for j=1, index  do
+      for j=1, index*thresh  do
         if top==1 then
           table.remove(cut[i])
         if bottom==1 then
           table.remove(cut[i], 1) 
         else
-          count = count +1
         end
       end
     end
     
     --Find the average of each channel's current readings
     local ainavg = {}
-    if count ~=0 then
-      for i=1,numchannels do
+    for i=1,numchannels do
         sums[i] = 0
-        for j=1,count do
-              sums[i] = sums[i] + cut[i][j]
+        for j=1, table.getn(cut[i]) do
+            sums[i] = sums[i] + cut[i][j]
         end
-          ainavg[i] = sums[i] / count
-          -- Save result to USER_RAM#_F32 register
-          ljWrite((46000 + ((i-1)*2)), 3, ainavg[i])
-      end
-      else 
-        for i=1,numchannels do ljWrite((46000 + ((i-1)*2)), 3, 0) end 
-      end
+            ainavg[i] = sums[i] / count
+            -- Save result to USER_RAM#_F32 register
+            ljWrite((46000 + ((i-1)*2)), 3, ainavg[i])
     end
     local cut = {}
   
