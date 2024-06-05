@@ -6,39 +6,50 @@
 local vsupply =3.3
 
 --Local functions for faster processing
-local ljWrite = MB.WA
+local ljWrite = MB.W
 local ljRead = MB.R
 local ljnameToAddress = MB.nameToAddress
 
 --Initialize variables
 local pwm = 0
 local ain = 0
-local names = {""DIO_EF_CLOCK0_ENABLE", "DIO_EF_CLOCK1_ENABLE", "DIO_EF_CLOCK2_ENABLE", "DIO_EF_CLOCK0_DIVISOR", "DIO_EF_CLOCK0_OPTIONS", "DIO_EF_CLOCK0_ROLL_VALUE", "DIO0_EF_ENABLE"}
-local nums = {0, 0, 0, 1, 0, 0, 0}
-local nValues = #names
+local name = {"DIO_EF_CLOCK0_ENABLE", "DIO_EF_CLOCK1_ENABLE", "DIO_EF_CLOCK2_ENABLE", "DIO_EF_CLOCK0_DIVISOR",
+            "DIO_EF_CLOCK0_OPTIONS", "DIO_EF_CLOCK0_ROLL_VALUE", "DIO0_EF_ENABLE", "DAC0"}
+local num = {0, 0, 0, 1, 0, 0, 0, vsupply}
+local nVals = #name
+for i=1, nVals do
+  print(i)
+  ljWrite(ljnameToAddress(name[i]), num[i], 0xFF2A)
+  ljWrite(ljnameToAddress(name[i]), num[i], 0xFB5F)
+end
 
---Configure Sensor
-ljWrite(ljnameToAddress(names), nValues, nums)
+local clockName = {"DIO0_EF_INDEX", "DIO_EF_CLOCK0_ENABLE", "DIO0_EF_ENABLE"}
+local clockNum = {5, 1, 1}
+local nVals = #clockName
+for i=1, nVals do
+  print(i)
+  ljWrite(ljnameToAddress(clockName[i]), clockNum[i], 0xFF2A)
+  ljWrite(ljnameToAddress(clockName[i]), clockNum[i], 0xFB5F)
+end
+
+
 print("Measuring...")
 
---The following sets up the DIO_EF to measure PWM output
-local clockNames = {"DIO0_EF_INDEX", "DIO_EF_CLOCK0_ENABLE", "DIO0_EF_ENABLE"}
-local clockNums = {5, 1, 1}
-local nValues = #clockNames
-ljWrite(ljnameToAddress(clockNames), nValues, clockNums)
-
 --Configure a 7.5 seconds interval for the sensor to get a reading
-LJ.IntervalConfig(1, 7500)
 LJ.IntervalConfig(0, 8500)
+LJ.IntervalConfig(1, 7500)
 
 --Power the sensor
-ljWrite(ljnameToAddress("DAC0"), 0)
+ljWrite(ljnameToAddress("DAC0"), 0, 0xFF2A)
+ljWrite(ljnameToAddress("DAC0"), 0, 0xFB5F)
 
 --Begin loop
 while true do
-	ljWrite(ljnameToAddress("DAC0"), 0)
+	ljWrite(ljnameToAddress("DAC0"), 0, 0xFF2A)
+  ljWrite(ljnameToAddress("DAC0"), 0, 0xFB5F)
 	if LJ.CheckInterval(1) then
-		ljWrite(ljnameToAddress("DAC0"), vsupply)
+		ljWrite(ljnameToAddress("DAC0"), vsupply, 0xFF2A)
+		ljWrite(ljnameToAddress("DAC0"), vsupply, 0xFB5F)
 	end
 	if LJ.CheckInterval(0) then
 		--Measures ToF of sonar in seconds
@@ -50,10 +61,10 @@ while true do
 		print("The PWM output measured a distance of: ", pwmf, " feet and ", pwmm, " meters.")
 
 		--Measures the ain output
-		ain = ljRead(ljnameToAddress("AIN3"))
+		ain = ljRead(ljnameToAddress("AIN1"))
 		--Converts to distance
 		ainf = math.floor((ain*((5.120*3.28084)/vsupply)*1000)+0.5)/1000
 		ainm = math.floor(ain*(5.120/vsupply)*1000+0.5)/1000
-		print("The AIN output measured a distance of: "m ainf, " feet and ", ainm, " meters.")
+		print("The AIN output measured a distance of: ", ainf, " feet and ", ainm, " meters.")
 	end
 end
