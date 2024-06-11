@@ -5,8 +5,6 @@
   local numscans = 60
   -- Scans per second
   local scanrate = 50
-  --The resolution index of the ain channels
-  local resindx = 9
   --Amount of scans to remove. Make sure thresh*numscans is an integer.
   local thresh = .25
 
@@ -33,10 +31,7 @@ for i=1,numchannels do
 end
 
 --Set ram register counter to 0
-ljWrite(ljnameToAddress("USER_RAM0_F32"), 0, count) 
-
---Set resolution index
-ljWrite(ljnameToAddress("AIN_ALL_RESOLUTION_INDEX"), 0, resindx) 
+ljWrite(ljnameToAddress("USER_RAM0_F32"), 0, count)
 
 --Configure an interval
 LJ.IntervalConfig(0, intrvlms)
